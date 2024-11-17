@@ -1,6 +1,6 @@
 import pytest, logging
 from pprint import pprint
-from src.crawler import KakaoCommentCrawler, NoSeriesError
+from app.services.crawler import KakaoCommentCrawler, NoSeriesError
 
 
 @pytest.fixture

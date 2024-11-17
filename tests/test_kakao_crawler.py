@@ -1,9 +1,6 @@
 import unittest, requests
 from unittest.mock import patch, Mock
-from src.crawler import (
-    KakaoCommentCrawler,
-    NoCommentError,
-)  # Adjust the import as necessary
+from app.services.crawler import KakaoCommentCrawler, NoCommentError
 
 
 class TestKakaoCommentCrawler(unittest.TestCase):

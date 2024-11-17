@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  crawler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: crawler_app
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+      - poetry_cache:/opt/poetry/cache
+    environment:
+      - POETRY_CACHE_DIR=/opt/poetry/cache
+      # 로컬 MongoDB 연결 URI
+      - MONGO_LOCAL_URI=mongodb://mongodb:27017/mydatabase
+      # MongoDB Atlas 연결 URI (보안상 실제 값은 별도의 시크릿 관리 권장)
+      - MONGO_ATLAS_URI=mongodb+srv://<username>:<password>@cluster0.mongodb.net/mydatabase?retryWrites=true&w=majority
+    depends_on:
+      - mongodb
+    command: 
+      # 컨테이너가 종료되지 않도록 설정 (필요 시 주석 해제)
+      # tail -f /dev/null  
+    # 재시작 정책 (필요 시 주석 해제)
+    # restart: unless-stopped
+
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    environment:
+      # 초기 관리자 사용자 설정 (필요 시 사용)
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=secret
+      # 초기 데이터베이스 생성 (옵션)
+      - MONGO_INITDB_DATABASE=mydatabase
+
+  mongo-express:
+    image: mongo-express:latest
+    container_name: mongo_express
+    ports:
+      - "8081:8081"  # 웹 UI에 접근할 포트
+    environment:
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=admin
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=secret
+      - ME_CONFIG_MONGODB_SERVER=mongodb
+      - ME_CONFIG_MONGODB_PORT=27017
+      # (옵션) MongoDB Atlas에 연결하려면 아래 환경 변수를 추가로 설정
+      # - ME_CONFIG_MONGODB_ENABLE_ADMIN=true
+      # - ME_CONFIG_MONGODB_URL=mongodb+srv://<username>:<password>@cluster0.mongodb.net/mydatabase?retryWrites=true&w=majority
+    depends_on:
+      - mongodb
+    restart: unless-stopped
+
+volumes:
+  poetry_cache:
+  mongo_data:
