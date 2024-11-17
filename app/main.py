@@ -1,10 +1,28 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
+from contextlib import asynccontextmanager
 import os, dotenv
-from .services import database
+from .services.database import MongoDB
+from .api.endpoints.comments import router as comment_router
 
 dotenv.load_dotenv()
 
-app = FastAPI()
+
+mongo: MongoDB = None
+
+
+def get_database():
+    return mongo
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global mongo
+    mongo = MongoDB(mongo_uri=os.getenv("MONGO_LOCAL_URI"), database="fastAPI_database")
+    yield
+    mongo.client.close()
+
+
+app = FastAPI(lifespan=lifespan)
 
 
 @app.get("/")
@@ -18,6 +36,10 @@ def read_item(item_id: int, q: str = None):
 
 
 @app.get("/database")
-async def test_database():
-    result = await database.MongoDB.create()
-    return result
+async def test_database(mongo: MongoDB = Depends(get_database)):
+    collection = mongo.db.get_collection("test_collection")
+    collection.insert_one({"value": "1"})
+    return
+
+
+app.include_router(router=comment_router, prefix="/api/comment", tags=["Comments"])

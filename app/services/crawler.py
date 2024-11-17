@@ -34,10 +34,11 @@ class KakaoCommentCrawler:
         "sec-fetch-site": "same-site",
     }
 
-    async def _fetch(self, session: aiohttp.ClientSession, body: Dict) -> Dict:
+    @classmethod
+    async def _fetch(cls, session: aiohttp.ClientSession, body: Dict) -> Dict:
         try:
             async with session.post(
-                self.URL, headers=self.HEADERS, json=body
+                cls.URL, headers=cls.HEADERS, json=body
             ) as response:
                 response.raise_for_status()
                 data = await response.json()
@@ -46,8 +47,9 @@ class KakaoCommentCrawler:
             logger.error(f"HTTP 요청 중 오류 발생: {err}")
             return {}
 
+    @classmethod
     async def _crawl_episode_comments(
-        self,
+        cls,
         session: aiohttp.ClientSession,
         series_id: int,
         product_id: int,
@@ -65,10 +67,10 @@ class KakaoCommentCrawler:
                 }
             },
         }
-        return await self._fetch(session, body)
+        return await cls._fetch(session, body)
 
     async def get_comments_by_episode(
-        self, series_id: int, product_id: int
+        cls, series_id: int, product_id: int
     ) -> List[Dict]:
         comments = []
         last_comment_uid = None
@@ -77,7 +79,7 @@ class KakaoCommentCrawler:
         async with aiohttp.ClientSession() as session:
             while True:
                 await asyncio.sleep(0.5)  # 비동기 대기
-                comment_data = await self._crawl_episode_comments(
+                comment_data = await cls._crawl_episode_comments(
                     session, series_id, product_id, page, last_comment_uid
                 )
 
@@ -98,17 +100,18 @@ class KakaoCommentCrawler:
 
         return comments
 
-    async def get_episode_by_series(self, series_id: int, after: str = None) -> Dict:
+    @classmethod
+    async def get_episode_by_series(cls, series_id: int, after: str = None) -> Dict:
         body = {
             "query": EPISODE_QUERY,
             "variables": {"seriesId": series_id, "after": after, "sortType": "asc"},
         }
         async with aiohttp.ClientSession() as session:
-            data = await self._fetch(session, body)
+            data = await cls._fetch(session, body)
             if not data.get("contentHomeProductList"):
                 raise NoSeriesError("해당 시리즈가 존재하지 않습니다.")
             return data.get("contentHomeProductList", {})
 
-    async def get_all_episodes_by_series(self, series_id: int) -> List[Dict]:
-        episodes = await self.get_episode_by_series(series_id)
+    async def get_all_episodes_by_series(cls, series_id: int) -> List[Dict]:
+        episodes = await cls.get_episode_by_series(series_id)
         return episodes.get("edges", [])
