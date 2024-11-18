@@ -62,3 +62,22 @@ Docker Compose의 up 명령어는 다양한 상황에 따라 유연하게 동작
 docker exec -it mongodb bash
 mongosh # 셀 실행
 ```
+
+## fastAPI
+
+### dependencies
+
+dependencies.py에 의존성 객체를 정의하고 다른 라우터에서 불러올 수 있다.
+``` python
+from ...dependencies import get_database
+
+mongo: dict[str, MongoDB] = Depends(get_database)
+```
+`lifespan`을 사용하기 위해서 `main.py`에서 dependencies.py 의 객체를 수정했다.
+참조형 객체인 딕셔너리로 해야지 모듈 외부에서 변수를 수정할 수 있었다. 일반 변수는 None이 할당됨.
+
+
+
+## TODO
+
+1. 같은 댓글들 크롤링하여 db에 저장하는 것을 방지하는 로직 개발

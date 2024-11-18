@@ -42,6 +42,7 @@ class KakaoCommentCrawler:
             ) as response:
                 response.raise_for_status()
                 data = await response.json()
+                print(data)
                 return data.get("data", {})
         except aiohttp.ClientError as err:
             logger.error(f"HTTP 요청 중 오류 발생: {err}")
@@ -69,6 +70,7 @@ class KakaoCommentCrawler:
         }
         return await cls._fetch(session, body)
 
+    @classmethod
     async def get_comments_by_episode(
         cls, series_id: int, product_id: int
     ) -> List[Dict]:
@@ -82,20 +84,25 @@ class KakaoCommentCrawler:
                 comment_data = await cls._crawl_episode_comments(
                     session, series_id, product_id, page, last_comment_uid
                 )
+                if page == 0:
+                    comment_count = comment_data["commentList"][
+                        "totalCount"
+                    ]  # 첫번째 시도에서만 댓글 개수 셈
+                    page_count = (comment_count - 1) // 25
 
                 if not comment_data or "commentList" not in comment_data:
-                    break
+                    raise NoCommentError("댓글이 없습니다.")
 
                 comment_list = comment_data["commentList"].get("commentList", [])
                 if not comment_list:
-                    break
+                    raise NoCommentError("댓글이 없습니다.")
 
                 comments.extend(comment_list)
                 last_comment_uid = comment_list[-1]["commentUid"]
                 logger.info(f"페이지 {page + 1} 댓글 {len(comments)}개 크롤링 완료.")
                 page += 1
 
-                if comment_data["commentList"].get("isEnd", False) or page > 6:
+                if comment_data["commentList"].get("isEnd", False) or page > page_count:
                     break
 
         return comments
