@@ -1,5 +1,5 @@
 # 1. 베이스 이미지 설정
-FROM python:3.11
+FROM python:3.12
 
 # 2. 환경 변수 설정
 ENV POETRY_VIRTUALENVS_CREATE=false

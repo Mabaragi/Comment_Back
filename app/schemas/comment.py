@@ -1,4 +1,10 @@
+from typing import Optional
 from pydantic import BaseModel, Field
+
+
+class CommentRequest(BaseModel):
+    product_id: int
+    comment_id: Optional[int] = None
 
 
 class CommentCrawlRequest(BaseModel):
@@ -12,7 +18,22 @@ class CommentCrawlRequest(BaseModel):
     class Config:
         json_schema_extra = {
             "example": {
-                "series_id": 59071959,
-                "product_id": 59124625,
+                "series_id": 65404339,
+                "product_id": 65415225,
+            }
+        }
+
+
+class CommentCrawlResponse(BaseModel):
+    series_id: int
+    product_id: int
+    comment_count: int
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "series_id": 65415225,
+                "product_id": 65415225,
+                "comment_count": 12,
             }
         }

@@ -6,9 +6,6 @@ from bson.objectid import ObjectId
 
 
 class MongoDB:
-    def __init__(self, mongo_uri: str, database: str):
-        self.client = motor.motor_asyncio.AsyncIOMotorClient(
-            "mongodb://admin:secret@localhost:27017"
-        )
-        # self.db = self.client.get_database("my_project")
+    def __init__(self, mongo_uri: str):
+        self.client = motor.motor_asyncio.AsyncIOMotorClient(mongo_uri)
         self.db = self.client.get_database("my_project")

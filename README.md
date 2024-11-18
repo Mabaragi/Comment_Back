@@ -57,11 +57,35 @@ Docker Compose의 up 명령어는 다양한 상황에 따라 유연하게 동작
 
 ## MongoDB
 
-몽고db 컨테이너에 연결
+### 몽고db 컨테이너에 연결
 ```
 docker exec -it mongodb bash
 mongosh # 셀 실행
 ```
+
+### 몽고 db 인증
+docker-compose의 환경변수에서 정의한 계정으로 로그인한다
+```bash
+mongosh "mongodb://admin:secret@localhost:27017"
+```
+
+### 몽고sh 명령어
+```js
+showdbs # 데이터베이스 조회
+use my_project # 데이터베이스 선택
+db # 현재 데이터베이스 확인
+show collections # 콜렉션 조회
+db.comments.createIndex({commentUid: 1}, {unique:true}) # 고유 인덱스 생성
+```
+```js
+comments> db.comments.getIndexes()
+[
+  { v: 2, key: { _id: 1 }, name: '_id_' },
+  { v: 2, key: { commentUid: 1 }, name: 'commentUid_1', unique: true }
+]
+```
+_id와 commentUid 필드가 오름차순으로 설정된 인덱스.
+
 
 ## fastAPI
 
