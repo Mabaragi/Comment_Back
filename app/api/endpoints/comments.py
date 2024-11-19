@@ -4,6 +4,8 @@ from app.services.crawler import KakaoCommentCrawler
 from app.services.database import MongoDB
 from ...dependencies import get_database
 from typing import Optional
+from pprint import pprint
+from pymongo.errors import BulkWriteError
 
 router = APIRouter()
 
@@ -36,12 +38,20 @@ async def crawl_comments(
     comments = await KakaoCommentCrawler.get_comments_by_episode(
         series_id=series_id, product_id=product_id
     )
+    comment_count = len(comments)
     try:
         await collection.insert_many(documents=comments, ordered=False)  # 중복 무시
     except Exception as e:
         # 중복된 commentUid로 인해 발생하는 오류를 처리
-        print(f"에러가 있습니다.: {str(e)}")
-    comment_count = len(comments)
+        if isinstance(e, BulkWriteError):
+            duplicate_num = len(e.details.get("writeErrors", []))
+            return CommentCrawlResponse(
+                series_id=series_id,
+                product_id=product_id,
+                comment_count=comment_count,
+                duplicate_comments=duplicate_num,
+            )
+        pass
     return CommentCrawlResponse(
         series_id=series_id, product_id=product_id, comment_count=comment_count
     )

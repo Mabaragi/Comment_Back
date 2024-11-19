@@ -28,6 +28,7 @@ class CommentCrawlResponse(BaseModel):
     series_id: int
     product_id: int
     comment_count: int
+    duplicate_comments: int = 0
 
     class Config:
         json_schema_extra = {
@@ -35,5 +36,6 @@ class CommentCrawlResponse(BaseModel):
                 "series_id": 65415225,
                 "product_id": 65415225,
                 "comment_count": 12,
+                "duplicate_comments": 0,
             }
         }

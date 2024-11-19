@@ -42,7 +42,7 @@ class KakaoCommentCrawler:
             ) as response:
                 response.raise_for_status()
                 data = await response.json()
-                print(data)
+                # print(data)
                 return data.get("data", {})
         except aiohttp.ClientError as err:
             logger.error(f"HTTP 요청 중 오류 발생: {err}")
