@@ -1,7 +1,7 @@
 import pytest, logging
 from pprint import pprint
 from app.services.crawler import KakaoCommentCrawler, NoSeriesError
-
+import aiohttp
 
 # @pytest.fixture
 # def crawler():
@@ -12,11 +12,14 @@ from app.services.crawler import KakaoCommentCrawler, NoSeriesError
 # @pytest.mark.skip
 @pytest.mark.asyncio
 async def test_no_comments_raise_error():
+    session = aiohttp.ClientSession()
     series_id = 5907195912  # 없는 시리즈 아이디
     # with pytest.raises(NoSeriesError):
     #     crawler.get_episode_by_series(series_id=series_id)
     with pytest.raises(NoSeriesError):
-        await KakaoCommentCrawler.get_episode_by_series(series_id=series_id)
+        await KakaoCommentCrawler.get_episode_by_series(
+            session=session, series_id=series_id
+        )
 
 
 episode_test_cases = [
@@ -42,8 +45,9 @@ episode_test_cases = [
 @pytest.mark.asyncio
 @pytest.mark.parametrize("series_id, after, first_episode", episode_test_cases)
 async def test_episode_crawling(series_id: int, after: str, first_episode: int):
+    session = aiohttp.ClientSession()
     episode_list = await KakaoCommentCrawler.get_episode_by_series(
-        series_id=series_id, after=after
+        session=session, series_id=series_id, after=after
     )
     assert episode_list["edges"][0]["node"]["single"]["productId"] == first_episode
 

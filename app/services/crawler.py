@@ -33,6 +33,11 @@ class KakaoCommentCrawler:
         "sec-fetch-mode": "cors",
         "sec-fetch-site": "same-site",
     }
+    ITEM_PER_PAGE = 25
+
+    @classmethod
+    def _get_page_count(cls, total_count: int) -> int:
+        return (total_count + cls.ITEM_PER_PAGE - 1) // cls.ITEM_PER_PAGE
 
     @classmethod
     async def _fetch(cls, session: aiohttp.ClientSession, body: Dict) -> Dict:
@@ -88,7 +93,7 @@ class KakaoCommentCrawler:
                     comment_count = comment_data["commentList"][
                         "totalCount"
                     ]  # 첫번째 시도에서만 댓글 개수 셈
-                    page_count = (comment_count - 1) // 25
+                    page_count = cls._get_page_count(comment_count)
 
                 if not comment_data or "commentList" not in comment_data:
                     raise NoCommentError("댓글이 없습니다.")
@@ -102,23 +107,44 @@ class KakaoCommentCrawler:
                 logger.info(f"페이지 {page + 1} 댓글 {len(comments)}개 크롤링 완료.")
                 page += 1
 
-                if comment_data["commentList"].get("isEnd", False) or page > page_count:
+                if (
+                    comment_data["commentList"].get("isEnd", False)
+                    or page >= page_count
+                ):
                     break
 
         return comments
 
     @classmethod
-    async def get_episode_by_series(cls, series_id: int, after: str = None) -> Dict:
+    async def get_episode_by_series(
+        cls, session, series_id: int, after: str = None
+    ) -> Dict:
         body = {
             "query": EPISODE_QUERY,
             "variables": {"seriesId": series_id, "after": after, "sortType": "asc"},
         }
-        async with aiohttp.ClientSession() as session:
-            data = await cls._fetch(session, body)
-            if not data.get("contentHomeProductList"):
-                raise NoSeriesError("해당 시리즈가 존재하지 않습니다.")
-            return data.get("contentHomeProductList", {})
+        data = await cls._fetch(session, body)
+        if not data.get("contentHomeProductList"):
+            raise NoSeriesError("해당 시리즈가 존재하지 않습니다.")
+        return data.get("contentHomeProductList", {})
 
+    @classmethod
     async def get_all_episodes_by_series(cls, series_id: int) -> List[Dict]:
-        episodes = await cls.get_episode_by_series(series_id)
-        return episodes.get("edges", [])
+        after = "0"
+        page = 0
+        episode_list: list[dict] = []
+        async with aiohttp.ClientSession() as session:
+            while True:
+                content = await cls.get_episode_by_series(
+                    session, series_id=series_id, after=after
+                )
+                if page == 0:
+                    total_count = content.get("totalCount", 1)
+                    # print(total_count)
+                    page_count = cls._get_page_count(total_count)
+                has_next_page = content.get("pageInfo", {}).get("hasNextPage", {})
+                episode_list.extend(content.get("edges", []))
+                after = after = f"{int(after) + 25}"
+                if not has_next_page or page >= page_count:
+                    break
+        return episode_list
