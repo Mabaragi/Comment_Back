@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 import os, dotenv
 from .services.database import MongoDB
 from .dependencies import mongo, get_database
-from .api.endpoints.comments import router as comment_router
+from .api.endpoints.crawl import router as crawl_router
 import json
 
 dotenv.load_dotenv()
@@ -42,7 +42,7 @@ async def test_database(mongo: MongoDB = Depends(get_database)):
 
 
 app.include_router(
-    router=comment_router,
-    prefix="/api/comment",
-    tags=["Comments"],
+    router=crawl_router,
+    prefix="/api/crawl",
+    tags=["Crawling"],
 )

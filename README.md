@@ -86,6 +86,28 @@ comments> db.comments.getIndexes()
 ```
 _id와 commentUid 필드가 오름차순으로 설정된 인덱스.
 
+### 몽고 초기화 스크립트
+초기화 스크립트를 다음과 같이 지정 할 수 있다.
+```docker-compose
+volumes:
+    - mongo_data:/data/db
+    - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.j
+```
+- 초기화 스크립트의 권한은 환경변수의 계정과 비밀번호로 부여된다.
+- 초기화 스크립트는 몽고db의 데이터베이스가 비어있을 경우에만 실행된다.
+
+- 초기화 스크립트
+```js
+// 몽고db는 데이터베이스나 콜렉션, 필드가 없을 경우에도 아래와 같은 작업이 가능하다.
+db = db.getSiblingDB("my_project"); // 데이터베이스 선택
+
+// 고유 인덱스 생성
+db.comments.createIndex({ commentUid: 1 }, { unique: true });
+db.episodes.createIndex({ productId: 1 }, { unique: true });
+
+print("Indexes created successfully!");
+
+```
 
 ## fastAPI
 

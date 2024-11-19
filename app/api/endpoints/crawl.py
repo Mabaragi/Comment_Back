@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from app.schemas.comment import *
-from app.services.crawler import KakaoCommentCrawler
+from app.schemas.episodes import *
+from app.services.crawler import KakaoPageCrawler
 from app.services.database import MongoDB
 from ...dependencies import get_database
 from typing import Optional
@@ -10,7 +11,7 @@ from pymongo.errors import BulkWriteError
 router = APIRouter()
 
 
-@router.get("/products/{product_id}/comments/")
+@router.get("/products/{product_id}/")
 async def get_comments(
     product_id: int = 59124625,
     comment_id: Optional[int] = None,  # comment_id는 선택적
@@ -27,7 +28,7 @@ async def get_comments(
         return {"comments": comments}
 
 
-@router.post("/crawl/")
+@router.post("/comments/")
 async def crawl_comments(
     crawl_request: CommentCrawlRequest,
     mongo: MongoDB = Depends(get_database),
@@ -35,7 +36,7 @@ async def crawl_comments(
     series_id = crawl_request.series_id
     product_id = crawl_request.product_id
     collection = mongo.db.get_collection("comments")
-    comments = await KakaoCommentCrawler.get_comments_by_episode(
+    comments = await KakaoPageCrawler.get_comments_by_episode(
         series_id=series_id, product_id=product_id
     )
     comment_count = len(comments)
@@ -51,7 +52,37 @@ async def crawl_comments(
                 comment_count=comment_count,
                 duplicate_comments=duplicate_num,
             )
-        pass
     return CommentCrawlResponse(
         series_id=series_id, product_id=product_id, comment_count=comment_count
     )
+
+
+@router.post("/episodes/")
+async def crawl_episodes(
+    crawl_request: EpisodeCrawlRequest,
+    mongo: MongoDB = Depends(get_database),
+) -> EpisodeCrawlResponse:
+    series_id = crawl_request.series_id
+    collection = mongo.db.get_collection("episodes")
+    episode_datas = await KakaoPageCrawler.get_all_episodes_by_series(
+        series_id=series_id
+    )
+    episodes = [
+        {**episode_data.get("node", {}).get("single", {}), "seriesId": series_id}
+        for episode_data in episode_datas
+    ]
+    episode_count = len(episodes)
+    try:
+        await collection.insert_many(documents=episodes, ordered=False)  # 중복 무시
+    except Exception as e:
+        # 중복된 productId로 인해 발생하는 오류를 처리
+        if isinstance(e, BulkWriteError):
+            print(e)
+            duplicate_num = len(e.details.get("writeErrors", []))
+            return EpisodeCrawlResponse(
+                series_id=series_id,
+                episode_count=episode_count,
+                duplicate_episodes=duplicate_num,
+            )
+        pass
+    return EpisodeCrawlResponse(series_id=series_id, episode_count=episode_count)

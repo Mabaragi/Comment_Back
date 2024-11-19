@@ -30,12 +30,13 @@ services:
       - "27017:27017"
     volumes:
       - mongo_data:/data/db
+      - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js
     environment:
       # 초기 관리자 사용자 설정 (필요 시 사용)
       - MONGO_INITDB_ROOT_USERNAME=admin
       - MONGO_INITDB_ROOT_PASSWORD=secret
       # 초기 데이터베이스 생성 (옵션)
-      - MONGO_INITDB_DATABASE=mydatabase
+      - MONGO_INITDB_DATABASE=my_project
 
   mongo-express:
     image: mongo-express:latest

@@ -16,7 +16,7 @@ class NoSeriesError(Exception):
     """시리즈가 없을때 발생하는 에러"""
 
 
-class KakaoCommentCrawler:
+class KakaoPageCrawler:
     URL = "https://bff-page.kakao.com/graphql"
     HEADERS = {
         "Accept": "application/json",
