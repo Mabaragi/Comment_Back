@@ -4,6 +4,7 @@ import os, dotenv
 from .services.database import MongoDB
 from .dependencies import mongo, get_database
 from .api.endpoints.crawl import router as crawl_router
+from .api.endpoints.user import router as user_router
 import json
 
 dotenv.load_dotenv()
@@ -45,4 +46,9 @@ app.include_router(
     router=crawl_router,
     prefix="/api/crawl",
     tags=["Crawling"],
+)
+app.include_router(
+    router=user_router,
+    prefix="/api/user",
+    tags=["User"],
 )
